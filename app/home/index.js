@@ -1,3 +1,4 @@
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -5,8 +6,8 @@ import {
   Pressable,
   ScrollView,
   TextInput,
+  ActivityIndicator,
 } from "react-native";
-import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AntDesign } from "@expo/vector-icons";
 import { theme } from "../../constants/theme";
@@ -25,6 +26,7 @@ const HomeScreen = () => {
   const [search, setSearch] = useState("");
   const [images, setImages] = useState([]);
   const [activeCategory, setActiveCategory] = useState(null);
+  const [isLoading, setIsLoading] = useState(false); // New state for loading indicator
   const searchInputRef = useRef(null);
   const currentFetchIdRef = useRef(0);
   const modalRef = useRef(null);
@@ -36,6 +38,7 @@ const HomeScreen = () => {
   }, []);
 
   const fetchImages = async (params = { page: 1 }, append = true) => {
+    setIsLoading(true); // Set loading to true when fetching new images
     const fetchId = ++currentFetchIdRef.current;
     let res = await apiCall(params);
     if (fetchId !== currentFetchIdRef.current) return; // Ignore if not the latest fetch
@@ -43,6 +46,7 @@ const HomeScreen = () => {
       if (append) setImages((prevImages) => [...prevImages, ...res.data.hits]);
       else setImages(res.data.hits);
     }
+    setIsLoading(false); // Set loading to false once images are fetched
   };
 
   const openFiltersModal = () => {
@@ -87,12 +91,13 @@ const HomeScreen = () => {
 
   const handleScroll = (event) => {
     const contentHeight = event.nativeEvent.contentSize.height;
-    const scrollviewHeight = event.nativeEvent.layoutMeasurement.height;
+    const scrollViewHeight = event.nativeEvent.layoutMeasurement.height;
     const scrollOffset = event.nativeEvent.contentOffset.y;
-    const bottomPosition = contentHeight - scrollviewHeight;
+    const bottomPosition = contentHeight - scrollViewHeight;
 
     if (scrollOffset >= bottomPosition - 1) {
-      if (!isEndReached) {
+      if (!isEndReached && !isLoading) {
+        setIsLoading(true); // Set loading to true before fetching more images
         setIsEndReached(true);
         ++page;
         let params = {
@@ -162,7 +167,7 @@ const HomeScreen = () => {
           />
           {search && (
             <Pressable onPress={clearSearch} style={styles.closeIcon}>
-              <Ionicons
+              <AntDesign
                 name="close"
                 size={24}
                 color={theme.colors.neutral(0.6)}
@@ -180,7 +185,14 @@ const HomeScreen = () => {
         </View>
 
         {/* Images masonry grid */}
-        <View>{images.length > 0 && <ImageGrid images={images} />}</View>
+        <View>
+          {images.length > 0 && <ImageGrid images={images} />}
+          {isLoading && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={theme.colors.primary} />
+            </View>
+          )}
+        </View>
       </ScrollView>
     </View>
   );
@@ -222,6 +234,12 @@ const styles = StyleSheet.create({
   },
   closeIcon: {
     marginLeft: 10,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 20,
   },
 });
 

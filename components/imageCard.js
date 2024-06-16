@@ -5,7 +5,7 @@ import { getImageSize } from "../helpers/common";
 import { hp, wp } from "../helpers/common";
 import { theme } from "../constants/theme";
 
-const ImageCard = ({ item, index, columns }) => {
+const ImageCard = ({ item, index, columns, router }) => {
   const isLastInRow = () => {
     return (index + 1) % columns === 0;
   };
