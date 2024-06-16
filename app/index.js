@@ -5,6 +5,7 @@ import { hp, wp } from "../helpers/common";
 import { LinearGradient } from "expo-linear-gradient";
 import { theme } from "../constants/theme";
 import { useRouter } from "expo-router";
+import Animated from "react-native-reanimated";
 
 const WelcomeScreen = () => {
   const router = useRouter();
@@ -18,6 +19,7 @@ const WelcomeScreen = () => {
         resizeMode="cover"
       />
       {/* Linear gradient */}
+
       <LinearGradient
         colors={[
           "rgba(255,255,255,0)",
