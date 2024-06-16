@@ -8,13 +8,14 @@ import {
 } from "react-native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather, FontAwesome6, Ionicons } from "@expo/vector-icons";
+import { AntDesign } from "@expo/vector-icons";
 import { theme } from "../../constants/theme";
 import { wp, hp } from "../../helpers/common";
 import Categories from "../../components/categories";
 import { apiCall } from "../../api";
 import ImageGrid from "../../components/imageGrid";
 import { debounce } from "lodash";
+import { Feather } from "@expo/vector-icons";
 
 var page = 1;
 
@@ -26,12 +27,15 @@ const HomeScreen = () => {
   const [activeCategory, setActiveCategory] = useState(null);
   const searchInputRef = useRef(null);
   const currentFetchIdRef = useRef(0);
+  const modalRef = useRef(null);
+  const scrollRef = useRef(null);
+  const [isEndReached, setIsEndReached] = useState(false);
 
   useEffect(() => {
     fetchImages();
   }, []);
 
-  const fetchImages = async (params = { page: 1 }, append = false) => {
+  const fetchImages = async (params = { page: 1 }, append = true) => {
     const fetchId = ++currentFetchIdRef.current;
     let res = await apiCall(params);
     if (fetchId !== currentFetchIdRef.current) return; // Ignore if not the latest fetch
@@ -39,6 +43,14 @@ const HomeScreen = () => {
       if (append) setImages((prevImages) => [...prevImages, ...res.data.hits]);
       else setImages(res.data.hits);
     }
+  };
+
+  const openFiltersModal = () => {
+    modalRef?.current?.present();
+  };
+
+  const closeFiltersModal = () => {
+    modalRef?.current?.close();
   };
 
   const handleChangeCategory = (cat) => {
@@ -73,6 +85,35 @@ const HomeScreen = () => {
 
   const debounceSearch = useCallback(debounce(performSearch, 400), []);
 
+  const handleScroll = (event) => {
+    const contentHeight = event.nativeEvent.contentSize.height;
+    const scrollviewHeight = event.nativeEvent.layoutMeasurement.height;
+    const scrollOffset = event.nativeEvent.contentOffset.y;
+    const bottomPosition = contentHeight - scrollviewHeight;
+
+    if (scrollOffset >= bottomPosition - 1) {
+      if (!isEndReached) {
+        setIsEndReached(true);
+        ++page;
+        let params = {
+          page,
+        };
+        if (activeCategory) params.category = activeCategory;
+        if (search) params.q = search;
+        fetchImages(params);
+      }
+    } else if (isEndReached) {
+      setIsEndReached(false);
+    }
+  };
+
+  const handleScrollUp = () => {
+    scrollRef?.current?.scrollTo({
+      y: 0,
+      animated: true,
+    });
+  };
+
   const clearSearch = () => {
     setSearch("");
     searchInputRef?.current?.clear();
@@ -88,15 +129,20 @@ const HomeScreen = () => {
         <Pressable>
           <Text style={styles.title}>AuraWalls</Text>
         </Pressable>
-        <Pressable>
-          <FontAwesome6
-            name="bars-staggered"
+        <Pressable onPress={handleScrollUp}>
+          <AntDesign
+            name="upcircleo"
             size={22}
             color={theme.colors.neutral(0.7)}
           />
         </Pressable>
       </View>
-      <ScrollView contentContainerStyle={{ gap: 15 }}>
+      <ScrollView
+        onScroll={handleScroll}
+        scrollEventThrottle={5} // how often scroll event will fire while scrolling (in ms)
+        ref={scrollRef}
+        contentContainerStyle={{ gap: 15 }}
+      >
         {/* Searchbar */}
         <View style={styles.searchBar}>
           <View style={styles.searchIcon}>
