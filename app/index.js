@@ -33,7 +33,7 @@ const WelcomeScreen = () => {
       />
       {/* content */}
       <View style={styles.contentContainer}>
-        <Text style={styles.title}>AuraWalls</Text>
+        <Text style={styles.title}>PaperWalls</Text>
         <Text style={styles.punchline}>Every Image Tells a Story</Text>
         <View>
           <Pressable
